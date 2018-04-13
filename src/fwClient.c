@@ -128,6 +128,9 @@ void process_hello_operation(int sock)
 {
   struct hello_rp hello_rp;
   //TODO
+  int buffer[MAX_BUFF_SIZE];
+  buffer[0]="1";
+  send(sock,buffer,MAX_BUFF_SIZE,0);
 }
 
 /**
@@ -171,27 +174,51 @@ void process_menu_option(int s, int option)
 
 
 int main(int argc, char *argv[]){ 
-  int s;
-  unsigned short port;
-  char *hostName;  
-  int menu_option = 0;
+ 	int s;
+ 	unsigned short port;
+ 	char *hostName;  
+ 	int menu_option = 0;
     
-  port = getPort(argc, argv);  
-  hostName = getHost(argc, argv);
+ 	port = getPort(argc, argv);  
+ 	hostName = getHost(argc, argv);
+
+
+ 	struct sockaddr_in server_address;
+ 	server_address.sin_family = AF_INET;
+ 	server_address.sin_port = htons(port);
+ 	setaddrbyname(&server_address,hostName);
  
   //Checking that the host name has been set.Otherwise the application is stopped. 
 	if(hostName == NULL){
 		perror("No s'ha especificat el nom del servidor\n\n");
 		return -1;
 	}
-    
+
+	int client_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
+	if (client_socket < 0)
+	{
+		printf("Error en la creación del socket del cliente, codigo de error %d\n",client_socket);
+	}
+	else 
+	{
+		printf("Socket del cliente creado con exito, descriptor del socket %d\n",client_socket);
+	}
+
+	if (connect(client_socket,(struct sockaddr*)&server_address, sizeof(server_address)) < 0 )
+	{
+		printf("No ha sido posible establecer conexion con el servidor\n");
+	}
+	else
+	{
+		printf("Conexion con el servidor establecida con exito\n");
+	}
   
-  do{
+  	do{
       print_menu();
 		  // getting the user input.
 		  scanf("%d",&menu_option);
 		  printf("\n\n"); 
-		  process_menu_option(s, menu_option);
+		  process_menu_option(client_socket,menu_option);
 
 	  }while(menu_option != MENU_OP_EXIT); //end while(opcio)
  

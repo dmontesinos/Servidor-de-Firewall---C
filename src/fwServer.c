@@ -98,12 +98,42 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   
   chain.num_rules=0;
   chain.first_rule=NULL;
+
+  socklen_t client_address_len;
+  struct sockaddr_in client_address;
+  client_address_len = sizeof(client_address);
   
+  int server_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
+
+  struct sockaddr_in server_address;
+  server_address.sin_family = AF_INET;
+  server_address.sin_port = htons(9411);
+  server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+
+  if (server_socket < 0)
+  {
+    printf("Error en la creación del socket del servidor, codigo de error %d\n",server_socket);
+  }
+  else 
+  {
+    printf("Socket del servidor creado con exito, descriptor del socket %d\n",server_socket);
+  }
+
   
+
+  bind(server_socket,(struct sockaddr*)&server_address,sizeof(server_address));
+  listen(server_socket,MAX_QUEUED_CON);
+
   while(1) {
-    //TODO
+    int s2 = accept(server_socket, (struct sockaddr*)&client_address,&client_address_len);
     do {
+      int buffer [MAX_BUFF_SIZE];
+      if (recv(s2,buffer,MAX_BUFF_SIZE,0) > 0)
+      {
+        printf("%d",buffer[0]);
+      }
       //TODO: finish = process_msg(....., &chain);
+
     }while(!finish);
     
     //TODO
