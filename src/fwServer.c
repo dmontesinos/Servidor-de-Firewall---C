@@ -127,10 +127,11 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   while(1) {
     int s2 = accept(server_socket, (struct sockaddr*)&client_address,&client_address_len);
     do {
-      int buffer [MAX_BUFF_SIZE];
-      if (recv(s2,buffer,MAX_BUFF_SIZE,0) > 0)
+      char buffer [MAX_BUFF_SIZE];
+	  
+      if (recv(s2,buffer,sizeof(buffer),0) > 0)
       {
-        printf("%d",buffer[0]);
+        printf("%d",buffer[12]);
       }
       //TODO: finish = process_msg(....., &chain);
 

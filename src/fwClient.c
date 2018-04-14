@@ -126,11 +126,15 @@ void print_menu()
  */
 void process_hello_operation(int sock)
 {
-  struct hello_rp hello_rp;
+  //struct hello_rp hello_rp;
   //TODO
-  int buffer[MAX_BUFF_SIZE];
-  buffer[0]="1";
-  send(sock,buffer,MAX_BUFF_SIZE,0);
+  char buffer[MAX_BUFF_SIZE];
+  memset(buffer,'\0',sizeof(buffer));
+  unsigned short code = 5;
+  stshort(code,buffer);
+  buffer[18]="H";
+  send(sock,buffer,sizeof(buffer),0);
+  
 }
 
 /**
@@ -174,7 +178,7 @@ void process_menu_option(int s, int option)
 
 
 int main(int argc, char *argv[]){ 
- 	int s;
+ 	int client_socket;
  	unsigned short port;
  	char *hostName;  
  	int menu_option = 0;
@@ -194,7 +198,7 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 
-	int client_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
+	client_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
 	if (client_socket < 0)
 	{
 		printf("Error en la creación del socket del cliente, codigo de error %d\n",client_socket);
