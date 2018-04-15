@@ -46,8 +46,24 @@ int getPort(int argc, char* argv[])
  */
 void process_HELLO_msg(int sock)
 {
-  struct hello_rp hello_rp;
+  //struct hello_rp hello_rp;
+  //Creamos un buffer de 14bytes (especificado en pdf)
+  char buffer[14];
+  //struct hello_rp hello_rp;
+  //TODO
+  unsigned short code=2;
+  memset(buffer,'\0',sizeof(buffer));
+  stshort(code,buffer);
+  //Escribimos Hello World a partir del 2 byte (opcode)
+  char message[11] = "Hello World";
+  for (int i = 2; i< 13; i++)
+  {
+	  *(buffer+i)=message[i-2];
+  }
   
+  *((short*)buffer) = htons(code);
+  //Enviamos la respuesta al cliente
+  send(sock,buffer,sizeof(buffer),0);
   //TODO
 }
  
@@ -61,10 +77,11 @@ void process_HELLO_msg(int sock)
  */
 int process_msg(int sock, struct FORWARD_chain *chain)
 {
-  unsigned short op_code;
   int finish = 0;
-    
-
+  char buffer [MAX_BUFF_SIZE];
+  unsigned short op_code;
+  recv(sock,buffer,sizeof(buffer),0); 
+  op_code = ldshort(buffer);
   switch(op_code)
   {
     case MSG_HELLO:
@@ -81,7 +98,8 @@ int process_msg(int sock, struct FORWARD_chain *chain)
     case MSG_FLUSH:
       break;                                                                                     
     case MSG_FINISH:
-      //TODO
+	//Cerramos el socket con el cliente y salimos del bucle interno en el main
+      close(sock);
       finish = 1;
       break;
     default:
@@ -110,6 +128,7 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   server_address.sin_port = htons(9411);
   server_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
+  //Creacion del server sockett
   if (server_socket < 0)
   {
     printf("Error en la creación del socket del servidor, codigo de error %d\n",server_socket);
@@ -120,19 +139,17 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   }
 
   
-
+  //Asignamos al socket una direccion IP
   bind(server_socket,(struct sockaddr*)&server_address,sizeof(server_address));
+  //Maximo numero de peticiones que encolara el servidor
   listen(server_socket,MAX_QUEUED_CON);
 
   while(1) {
     int s2 = accept(server_socket, (struct sockaddr*)&client_address,&client_address_len);
     do {
-      char buffer [MAX_BUFF_SIZE];
-	  
-      if (recv(s2,buffer,sizeof(buffer),0) > 0)
-      {
-        printf("%d",buffer[12]);
-      }
+      
+	  finish=process_msg(s2,&chain);
+	 
       //TODO: finish = process_msg(....., &chain);
 
     }while(!finish);

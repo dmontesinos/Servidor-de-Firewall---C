@@ -126,15 +126,26 @@ void print_menu()
  */
 void process_hello_operation(int sock)
 {
+  //Creamos un buffer de 2 bytes para enviar el opCode de la peticion hello
+  char buffer[2];
   //struct hello_rp hello_rp;
-  //TODO
-  char buffer[MAX_BUFF_SIZE];
+  unsigned short code=1;
   memset(buffer,'\0',sizeof(buffer));
-  unsigned short code = 5;
   stshort(code,buffer);
-  buffer[18]="H";
+  *((short*)buffer) = htons(code);
+  //Enviamos la peticion al server
   send(sock,buffer,sizeof(buffer),0);
-  
+  //Server nos responde 
+  recv(sock,buffer,sizeof(buffer),0);
+  //Printamos la respuesta del server a partir del 2 byte (opCode)
+  char c='A';
+  int i = 2;
+  while (c!='\0')
+  {
+	  c = *(buffer+i);
+	  i++;
+	  printf("%c",c);
+  }
 }
 
 /**
@@ -143,7 +154,14 @@ void process_hello_operation(int sock)
  */
 void process_exit_operation(int sock)
 {
-  //TODO
+  //Creamos un buffer de 2 bytes para enviar el opCode de la peticion exit
+  char buffer[2];
+  unsigned short code=9;
+  memset(buffer,'\0',sizeof(buffer));
+  stshort(code,buffer);
+  *((short*)buffer) = htons(code);
+  //Enviamos la peticion al server y cerramos el cliente
+  send(sock,buffer,sizeof(buffer),0);
   exit(0);     
 }
 
@@ -156,7 +174,6 @@ void process_exit_operation(int sock)
 void process_menu_option(int s, int option)
 {		  
   switch(option){
-    // Opció HELLO
     case MENU_OP_HELLO:
       process_hello_operation(s);
       break;
@@ -170,7 +187,8 @@ void process_menu_option(int s, int option)
       break;
     case MENU_OP_FLUSH:
       break;       
-    case MENU_OP_EXIT:      
+    case MENU_OP_EXIT:
+		process_exit_operation(s);
     default:
       printf("Invalid menu option\n");          
   }
@@ -197,7 +215,7 @@ int main(int argc, char *argv[]){
 		perror("No s'ha especificat el nom del servidor\n\n");
 		return -1;
 	}
-
+	//Abrimos el socket del cliente
 	client_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
 	if (client_socket < 0)
 	{
@@ -207,7 +225,7 @@ int main(int argc, char *argv[]){
 	{
 		printf("Socket del cliente creado con exito, descriptor del socket %d\n",client_socket);
 	}
-
+	//Conectamos cliente con servidor
 	if (connect(client_socket,(struct sockaddr*)&server_address, sizeof(server_address)) < 0 )
 	{
 		printf("No ha sido posible establecer conexion con el servidor\n");
