@@ -48,11 +48,11 @@ void process_HELLO_msg(int sock)
 {
   //struct hello_rp hello_rp;
   //Creamos un buffer de 14bytes (especificado en pdf)
-  char buffer[14];
+  char *buffer = (char*) malloc(14*sizeof(char));
   //struct hello_rp hello_rp;
   //TODO
   unsigned short code=2;
-  memset(buffer,'\0',sizeof(buffer));
+  memset(buffer,'\0',(14*sizeof(char)));
   stshort(code,buffer);
   //Escribimos Hello World a partir del 2 byte (opcode)
   char message[11] = "Hello World";
@@ -63,9 +63,46 @@ void process_HELLO_msg(int sock)
   
   *((short*)buffer) = htons(code);
   //Enviamos la respuesta al cliente
-  send(sock,buffer,sizeof(buffer),0);
+  send(sock,buffer,(14*sizeof(char)),0);
+  free(buffer);
   //TODO
 }
+ 
+ 
+ void process_LIST_msg(int sock, struct FORWARD_chain *chain)
+ {
+
+  char *buffer = (char*) malloc(16*sizeof(char));
+  struct fw_rule *aux = chain->first_rule;
+  unsigned short code=4;
+  memset(buffer,'\0',(16*sizeof(char)));
+  stshort(code,buffer);
+  
+  if (chain->num_rules > 0 )
+  {
+		
+		do{
+			*((short*)buffer) = htons(code);
+			*(buffer+2) = aux;
+			send(sock,buffer,(16*sizeof(char)),0);
+			aux = aux->next_rule;
+		}while(aux->next_rule!=NULL);
+  }
+  else {
+	  *(buffer+2)=chain->num_rules;
+	  *((short*)buffer) = htons(code);
+	  send(sock,buffer,(4*sizeof(char)),0);
+  }
+  
+  
+  //Enviamos la respuesta al cliente
+  free(buffer);
+ }
+ 
+ void process_ADD_msg(int sock,char *buffer,struct FORWARD_chain *chain)
+ {
+	 
+ }
  
  /** 
  * Receives and process the request from a client.
@@ -78,18 +115,21 @@ void process_HELLO_msg(int sock)
 int process_msg(int sock, struct FORWARD_chain *chain)
 {
   int finish = 0;
-  char buffer [MAX_BUFF_SIZE];
+  char *buffer = (char*) malloc(MAX_BUFF_SIZE*sizeof(char));
   unsigned short op_code;
-  recv(sock,buffer,sizeof(buffer),0); 
+  recv(sock,buffer,sizeof(MAX_BUFF_SIZE*sizeof(char)),0); 
   op_code = ldshort(buffer);
+  free(buffer);
   switch(op_code)
   {
     case MSG_HELLO:
       process_HELLO_msg(sock);
       break;    
-    case MSG_LIST:      
+    case MSG_LIST: 
+	process_LIST_msg(sock,chain);
       break;
     case MSG_ADD:
+	//process_ADD_msg(sock,&buffer,chain);
       break;                              
     case MSG_CHANGE:      
       break;                              

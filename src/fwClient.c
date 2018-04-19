@@ -127,16 +127,19 @@ void print_menu()
 void process_hello_operation(int sock)
 {
   //Creamos un buffer de 2 bytes para enviar el opCode de la peticion hello
-  char buffer[2];
+  char *buffer = (char*) malloc(2*sizeof(char));
   //struct hello_rp hello_rp;
   unsigned short code=1;
-  memset(buffer,'\0',sizeof(buffer));
+  memset(buffer,'\0',(2*sizeof(char)));
   stshort(code,buffer);
   *((short*)buffer) = htons(code);
   //Enviamos la peticion al server
-  send(sock,buffer,sizeof(buffer),0);
+  send(sock,buffer,(2*sizeof(char)),0);
+  //Cambiamos el tamaño del buffer eliminando el buffer y creando otro nuevo
+  free(buffer);
+  buffer = (char*) malloc(14*sizeof(char));
   //Server nos responde 
-  recv(sock,buffer,sizeof(buffer),0);
+  recv(sock,buffer,(14*sizeof(char)),0);
   //Printamos la respuesta del server a partir del 2 byte (opCode)
   char c='A';
   int i = 2;
@@ -146,7 +149,48 @@ void process_hello_operation(int sock)
 	  i++;
 	  printf("%c",c);
   }
+  free(buffer);
 }
+
+void process_LIST_operation(int sock)
+{
+	 //Creamos un buffer de 2 bytes para enviar el opCode de la peticion hello
+  rule aux;
+  char *buffer = (char*) malloc(2*sizeof(char));
+  unsigned short code=3;
+  memset(buffer,'\0',(2*sizeof(char)));
+  stshort(code,buffer);
+  *((short*)buffer) = htons(code);
+  //Enviamos la peticion al server
+  send(sock,buffer,(2*sizeof(char)),0);
+  //Cambiamos el tamaño del buffer eliminando el buffer y creando otro nuevo
+  free(buffer);
+  buffer = (char*) malloc(16*sizeof(char));
+  //Server nos responde 
+  recv(sock,buffer,(16*sizeof(char)),0);
+  //Printamos la respuesta del server a partir del 2 byte (opCode)
+  
+  unsigned short contador = *(buffer+2);
+  printf("En el servidor hay %u reglas\n",contador);
+  while (contador > 0)
+  {
+	  //Tratar la regla
+	  
+	   contador--;
+	   if (contador>0)
+	   {
+		  recv(sock,buffer,(16*sizeof(char)),0); 
+	   }
+  }
+
+  free(buffer);
+}
+
+void process_ADD_operation(int sock)
+{
+	
+}
+
 
 /**
  * Closes the socket connected to the server and finishes the program.
@@ -155,13 +199,14 @@ void process_hello_operation(int sock)
 void process_exit_operation(int sock)
 {
   //Creamos un buffer de 2 bytes para enviar el opCode de la peticion exit
-  char buffer[2];
+  char *buffer = (char*) malloc(2*sizeof(char));
   unsigned short code=9;
-  memset(buffer,'\0',sizeof(buffer));
+  memset(buffer,'\0',(2*sizeof(char)));
   stshort(code,buffer);
   *((short*)buffer) = htons(code);
   //Enviamos la peticion al server y cerramos el cliente
-  send(sock,buffer,sizeof(buffer),0);
+  send(sock,buffer,(2*sizeof(char)),0);
+  free(buffer);
   exit(0);     
 }
 
@@ -177,9 +222,11 @@ void process_menu_option(int s, int option)
     case MENU_OP_HELLO:
       process_hello_operation(s);
       break;
-    case MENU_OP_LIST_RULES:      
+    case MENU_OP_LIST_RULES: 
+		process_LIST_operation(s);
       break;  
-    case MENU_OP_ADD_RULE:      
+    case MENU_OP_ADD_RULE:  
+		//process_ADD_operation(s);
       break;   
     case MENU_OP_CHANGE_RULE:
       break;   
