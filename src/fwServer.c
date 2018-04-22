@@ -48,7 +48,8 @@ void process_HELLO_msg(int sock)
 {
   //struct hello_rp hello_rp;
   //Creamos un buffer de 14bytes (especificado en pdf)
-  char *buffer = (char*) malloc(14*sizeof(char));
+  //char *buffer = (char*) malloc(14*sizeof(char));
+  char buffer[MAX_BUFF_SIZE];
   //struct hello_rp hello_rp;
   //TODO
   unsigned short code=2;
@@ -60,11 +61,8 @@ void process_HELLO_msg(int sock)
   {
 	  *(buffer+i)=message[i-2];
   }
-  
-  *((short*)buffer) = htons(code);
   //Enviamos la respuesta al cliente
   send(sock,buffer,(14*sizeof(char)),0);
-  free(buffer);
   //TODO
 }
  
@@ -105,7 +103,7 @@ void process_HELLO_msg(int sock)
      if (chain->first_rule==NULL)
      {
          //chain->first_rule->rule = *((rule*)buffer+2);
-         memcpy(aux.rule,(buffer+2),sizeof(rule));
+         memcpy(&aux.rule,(buffer+2),sizeof(rule));
          chain->first_rule->next_rule = NULL;
          chain->num_rules++;
      }
@@ -116,7 +114,7 @@ void process_HELLO_msg(int sock)
              aux.next_rule=aux.next_rule;
          }
          //aux.rule=*((rule*)buffer+2);
-         memcpy(aux.rule,(buffer+2),sizeof(rule));
+         memcpy(&aux.rule,(buffer+2),sizeof(rule));
          aux.next_rule=NULL;
          chain->num_rules++;
      }
@@ -134,9 +132,10 @@ void process_HELLO_msg(int sock)
 int process_msg(int sock, struct FORWARD_chain *chain)
 {
   int finish = 0;
-  char *buffer = (char*) malloc(MAX_BUFF_SIZE*sizeof(char));
+  //char *buffer = (char*) malloc(MAX_BUFF_SIZE*sizeof(char));
+  char buffer[MAX_BUFF_SIZE];
   unsigned short op_code;
-  recv(sock,buffer,sizeof(MAX_BUFF_SIZE*sizeof(char)),0); 
+  recv(sock,buffer,sizeof(MAX_BUFF_SIZE),0); 
   op_code = ldshort(buffer);
   switch(op_code)
   {
@@ -163,7 +162,6 @@ int process_msg(int sock, struct FORWARD_chain *chain)
     default:
       perror("Message code does not exist.\n");
   } 
-  free(buffer);
   return finish;
 }
  

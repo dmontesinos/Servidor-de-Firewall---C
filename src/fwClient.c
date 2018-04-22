@@ -127,17 +127,14 @@ void print_menu()
 void process_hello_operation(int sock)
 {
   //Creamos un buffer de 2 bytes para enviar el opCode de la peticion hello
-  char *buffer = (char*) malloc(2*sizeof(char));
+  //char *buffer = (char*) malloc(2*sizeof(char));
+  char buffer[MAX_BUFF_SIZE];
   //struct hello_rp hello_rp;
   unsigned short code=1;
-  memset(buffer,'\0',(2*sizeof(char)));
+  memset(buffer,'\0',MAX_BUFF_SIZE);
   stshort(code,buffer);
-  *((short*)buffer) = htons(code);
   //Enviamos la peticion al server
   send(sock,buffer,(2*sizeof(char)),0);
-  //Cambiamos el tamaño del buffer eliminando el buffer y creando otro nuevo
-  free(buffer);
-  buffer = (char*) malloc(14*sizeof(char));
   //Server nos responde 
   recv(sock,buffer,(14*sizeof(char)),0);
   //Printamos la respuesta del server a partir del 2 byte (opCode)
@@ -149,7 +146,6 @@ void process_hello_operation(int sock)
 	  i++;
 	  printf("%c",c);
   }
-  free(buffer);
 }
 
 void process_LIST_operation(int sock)
@@ -160,7 +156,6 @@ void process_LIST_operation(int sock)
   unsigned short code=3;
   memset(buffer,'\0',(2*sizeof(char)));
   stshort(code,buffer);
-  *((short*)buffer) = htons(code);
   //Enviamos la peticion al server
   send(sock,buffer,(2*sizeof(char)),0);
   //Cambiamos el tamaño del buffer eliminando el buffer y creando otro nuevo
@@ -186,46 +181,57 @@ void process_LIST_operation(int sock)
   free(buffer);
 }
 
-void introducir_regla(rule regla)
+rule introducir_regla(rule regla)
 {
-    char ip[15];
-    unsigned short mascara;
-    unsigned short puerto;
-    unsigned short dporto;
+	char ip[MAX_BUFF_SIZE];
+	memset(ip,'\0',MAX_BUFF_SIZE);
+    int ip1;
+	int ip2;
+	int ip3;
+	int ip4;
     
-    printf("IP: ");
-    scanf("%s",&ip);
+	printf("Src/dst addr");
+	scanf("%hu",&regla.src_dst_addr);
+    printf("IP1: ");
+    scanf("%d",&ip1);
+	printf("IP2: ");
+    scanf("%d",&ip2);
+	printf("IP3: ");
+    scanf("%d",&ip3);
+	printf("IP4: ");
+    scanf("%d",&ip4);
     printf("Mascara: ");
-    scanf("%u",&mascara);
+    scanf("%hu",&regla.mask);
     printf("Puerto: ");
-    scanf("%u",&puerto);
+    scanf("%hu",&regla.port);
     printf("Dport/sport");
-    scanf("%u",&dporto);
+    scanf("%hu",&regla.src_dst_port);
+	
     
+	regla.src_dst_addr = htons(regla.src_dst_addr);
+	regla.mask = htons(regla.mask);
+	regla.src_dst_port = htons(regla.src_dst_port);
+	regla.port = htons(regla.port);
+	sprintf(ip, "%d.%d.%d.%d",ip1,ip2,ip3,ip4);
     inet_aton(ip,&regla.addr);
-    regla.mask=htons(mascara);
-    regla.port = htons(puerto);
-    regla.src_dst_addr = htons(dporto);
-    
-
-    
+	
+	return regla;
 }
 
 void process_ADD_operation(int sock)
 {
-    char *buffer = (char*) malloc(14*sizeof(char));
-    memset(buffer,'\0',(14*sizeof(char)));
+    //char *buffer = (char*) malloc(14*sizeof(char));
+	char buffer[MAX_BUFF_SIZE];
+    memset(buffer,'\0',MAX_BUFF_SIZE);
     unsigned short code = 5;
     stshort(code,buffer);
-    *((short*)buffer) = htons(code);
     rule nueva_regla;
     printf("He creado una nueva regla con exito \n");
-    introducir_regla(nueva_regla);
+    nueva_regla=introducir_regla(nueva_regla);
     printf("He introducido la regla con exito \n");
-    memcpy(buffer+2,nueva_regla,sizeof(nueva_regla)); //memcpy-> para copiar buffers/reglas
+    //memcpy(buffer+2,&nueva_regla,sizeof(nueva_regla)); //memcpy-> para copiar buffers/reglas
     printf("He asignado bien la memoria \n");
-    send(sock,buffer,(14*sizeof(char)),0);
-    free(buffer);
+    send(sock,buffer,MAX_BUFF_SIZE,0);
     
     
     
@@ -240,14 +246,13 @@ void process_ADD_operation(int sock)
 void process_exit_operation(int sock)
 {
   //Creamos un buffer de 2 bytes para enviar el opCode de la peticion exit
-  char *buffer = (char*) malloc(2*sizeof(char));
+  //char *buffer = (char*) malloc(2*sizeof(char));
+  char buffer[MAX_BUFF_SIZE];
   unsigned short code=9;
-  memset(buffer,'\0',(2*sizeof(char)));
+  memset(buffer,'\0',MAX_BUFF_SIZE);
   stshort(code,buffer);
-  *((short*)buffer) = htons(code);
   //Enviamos la peticion al server y cerramos el cliente
   send(sock,buffer,(2*sizeof(char)),0);
-  free(buffer);
   exit(0);     
 }
 
