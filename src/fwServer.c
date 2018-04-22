@@ -20,7 +20,7 @@ int getPort(int argc, char* argv[])
 {
   int param;
   int port = DEFAULT_PORT;
-
+  
   optind=1;
   // We process the application execution parameters.
 	while((param = getopt(argc, argv, "p:")) != -1){
@@ -99,9 +99,28 @@ void process_HELLO_msg(int sock)
   free(buffer);
  }
  
- void process_ADD_msg(int sock,char *buffer,struct FORWARD_chain *chain)
+ void process_ADD_msg(int sock, struct FORWARD_chain *chain,char *buffer)
  {
-	 
+     struct fw_rule aux;
+     if (chain->first_rule==NULL)
+     {
+         //chain->first_rule->rule = *((rule*)buffer+2);
+         memcpy(aux.rule,(buffer+2),sizeof(rule));
+         chain->first_rule->next_rule = NULL;
+         chain->num_rules++;
+     }
+     else{
+         aux.next_rule=chain->first_rule->next_rule;
+         while (aux.next_rule!=NULL)
+         {
+             aux.next_rule=aux.next_rule;
+         }
+         //aux.rule=*((rule*)buffer+2);
+         memcpy(aux.rule,(buffer+2),sizeof(rule));
+         aux.next_rule=NULL;
+         chain->num_rules++;
+     }
+     
  }
  
  /** 
@@ -119,7 +138,6 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   unsigned short op_code;
   recv(sock,buffer,sizeof(MAX_BUFF_SIZE*sizeof(char)),0); 
   op_code = ldshort(buffer);
-  free(buffer);
   switch(op_code)
   {
     case MSG_HELLO:
@@ -129,7 +147,7 @@ int process_msg(int sock, struct FORWARD_chain *chain)
 	process_LIST_msg(sock,chain);
       break;
     case MSG_ADD:
-	//process_ADD_msg(sock,&buffer,chain);
+	process_ADD_msg(sock,chain,&buffer);
       break;                              
     case MSG_CHANGE:      
       break;                              
@@ -145,7 +163,7 @@ int process_msg(int sock, struct FORWARD_chain *chain)
     default:
       perror("Message code does not exist.\n");
   } 
-  
+  free(buffer);
   return finish;
 }
  
@@ -153,9 +171,8 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   int port = getPort(argc, argv);
   int finish=0;
   struct FORWARD_chain chain;
-  
-  chain.num_rules=0;
   chain.first_rule=NULL;
+  chain.num_rules = 0;
 
   socklen_t client_address_len;
   struct sockaddr_in client_address;

@@ -186,13 +186,54 @@ void process_LIST_operation(int sock)
   free(buffer);
 }
 
+void introducir_regla(rule regla)
+{
+    char ip[15];
+    unsigned short mascara;
+    unsigned short puerto;
+    unsigned short dporto;
+    
+    printf("IP: ");
+    scanf("%s",&ip);
+    printf("Mascara: ");
+    scanf("%u",&mascara);
+    printf("Puerto: ");
+    scanf("%u",&puerto);
+    printf("Dport/sport");
+    scanf("%u",&dporto);
+    
+    inet_aton(ip,&regla.addr);
+    regla.mask=htons(mascara);
+    regla.port = htons(puerto);
+    regla.src_dst_addr = htons(dporto);
+    
+
+    
+}
+
 void process_ADD_operation(int sock)
 {
-	
+    char *buffer = (char*) malloc(14*sizeof(char));
+    memset(buffer,'\0',(14*sizeof(char)));
+    unsigned short code = 5;
+    stshort(code,buffer);
+    *((short*)buffer) = htons(code);
+    rule nueva_regla;
+    printf("He creado una nueva regla con exito \n");
+    introducir_regla(nueva_regla);
+    printf("He introducido la regla con exito \n");
+    memcpy(buffer+2,nueva_regla,sizeof(nueva_regla)); //memcpy-> para copiar buffers/reglas
+    printf("He asignado bien la memoria \n");
+    send(sock,buffer,(14*sizeof(char)),0);
+    free(buffer);
+    
+    
+    
 }
 
 
-/**
+
+/*
  * Closes the socket connected to the server and finishes the program.
  * @param sock socket used for the communication.
  */
@@ -226,7 +267,7 @@ void process_menu_option(int s, int option)
 		process_LIST_operation(s);
       break;  
     case MENU_OP_ADD_RULE:  
-		//process_ADD_operation(s);
+		process_ADD_operation(s);
       break;   
     case MENU_OP_CHANGE_RULE:
       break;   
