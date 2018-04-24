@@ -99,14 +99,15 @@ void process_HELLO_msg(int sock)
  
  void process_ADD_msg(int sock, struct FORWARD_chain *chain,char *buffer)
  {
-     struct fw_rule aux;
+     rule aux;
      if (chain->first_rule==NULL)
      {
-         //chain->first_rule->rule = *((rule*)buffer+2);
-         memcpy(&aux.rule,(buffer+2),sizeof(rule));
+         memcpy(&aux,buffer+2,sizeof(rule));
+         chain->first_rule->rule = aux;
          chain->first_rule->next_rule = NULL;
          chain->num_rules++;
      }
+     /*
      else{
          aux.next_rule=chain->first_rule->next_rule;
          while (aux.next_rule!=NULL)
@@ -114,11 +115,11 @@ void process_HELLO_msg(int sock)
              aux.next_rule=aux.next_rule;
          }
          //aux.rule=*((rule*)buffer+2);
-         memcpy(&aux.rule,(buffer+2),sizeof(rule));
+         memcpy(&aux.rule,buffer+2,sizeof(rule));
          aux.next_rule=NULL;
          chain->num_rules++;
      }
-     
+     */
  }
  
  /** 
@@ -135,7 +136,7 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   //char *buffer = (char*) malloc(MAX_BUFF_SIZE*sizeof(char));
   char buffer[MAX_BUFF_SIZE];
   unsigned short op_code;
-  recv(sock,buffer,sizeof(MAX_BUFF_SIZE),0); 
+  recv(sock,buffer,MAX_BUFF_SIZE,0); 
   op_code = ldshort(buffer);
   switch(op_code)
   {

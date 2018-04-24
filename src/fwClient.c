@@ -229,7 +229,7 @@ void process_ADD_operation(int sock)
     printf("He creado una nueva regla con exito \n");
     nueva_regla=introducir_regla(nueva_regla);
     printf("He introducido la regla con exito \n");
-    //memcpy(buffer+2,&nueva_regla,sizeof(nueva_regla)); //memcpy-> para copiar buffers/reglas
+    memcpy(buffer+2,&nueva_regla,sizeof(nueva_regla)); //memcpy-> para copiar buffers/reglas
     printf("He asignado bien la memoria \n");
     send(sock,buffer,MAX_BUFF_SIZE,0);
     
