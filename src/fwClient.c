@@ -150,35 +150,30 @@ void process_hello_operation(int sock)
 
 void process_LIST_operation(int sock)
 {
-	 //Creamos un buffer de 2 bytes para enviar el opCode de la peticion hello
   rule aux;
-  char *buffer = (char*) malloc(2*sizeof(char));
+  char buffer[MAX_BUFF_SIZE];
   unsigned short code=3;
-  memset(buffer,'\0',(2*sizeof(char)));
+  memset(buffer,'\0',MAX_BUFF_SIZE);
   stshort(code,buffer);
   //Enviamos la peticion al server
   send(sock,buffer,(2*sizeof(char)),0);
-  //Cambiamos el tamaño del buffer eliminando el buffer y creando otro nuevo
-  free(buffer);
-  buffer = (char*) malloc(16*sizeof(char));
   //Server nos responde 
-  recv(sock,buffer,(16*sizeof(char)),0);
+  recv(sock,buffer,MAX_BUFF_SIZE,0);
   //Printamos la respuesta del server a partir del 2 byte (opCode)
-  
-  unsigned short contador = *(buffer+2);
+  unsigned short contador =ldshort(buffer+2);
   printf("En el servidor hay %u reglas\n",contador);
+  int offset=4;
+  int indice = 1;
   while (contador > 0)
   {
-	  //Tratar la regla
-	  
-	   contador--;
-	   if (contador>0)
-	   {
-		  recv(sock,buffer,(16*sizeof(char)),0); 
-	   }
+	 memcpy(&aux,buffer+offset,sizeof(rule));
+	 printf("%d %s %hu %hu %hu %hu\n",indice,inet_ntoa(aux.addr),ntohs(aux.src_dst_addr),ntohs(aux.mask),ntohs(aux.src_dst_port),ntohs(aux.port));
+	 contador--;
+	 offset=offset + sizeof(rule);
+	 indice++;
+	 
   }
 
-  free(buffer);
 }
 
 rule introducir_regla(rule regla)

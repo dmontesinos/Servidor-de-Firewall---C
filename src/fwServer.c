@@ -70,56 +70,62 @@ void process_HELLO_msg(int sock)
  void process_LIST_msg(int sock, struct FORWARD_chain *chain)
  {
 
-  char *buffer = (char*) malloc(16*sizeof(char));
+  char buffer[MAX_BUFF_SIZE];
   struct fw_rule *aux = chain->first_rule;
+  rule copia;
   unsigned short code=4;
-  memset(buffer,'\0',(16*sizeof(char)));
+  memset(buffer,'\0',MAX_BUFF_SIZE);
   stshort(code,buffer);
-  
+  unsigned short num_rules = (unsigned short)chain->num_rules;
+  stshort(num_rules,buffer+2);
   if (chain->num_rules > 0 )
   {
-		
-		do{
-			*((short*)buffer) = htons(code);
-			*(buffer+2) = aux;
-			send(sock,buffer,(16*sizeof(char)),0);
-			aux = aux->next_rule;
-		}while(aux->next_rule!=NULL);
+	  int contador=4;
+	  int i = 0;
+	  for (i = 0; i < chain->num_rules; i++)
+	  {
+		copia=aux->rule;
+		memcpy(buffer+contador,&copia,sizeof(rule));
+		aux = aux->next_rule;
+		contador+=sizeof(rule);
+	  }
+		send(sock,buffer,contador,0);
   }
   else {
-	  *(buffer+2)=chain->num_rules;
-	  *((short*)buffer) = htons(code);
 	  send(sock,buffer,(4*sizeof(char)),0);
   }
   
   
-  //Enviamos la respuesta al cliente
-  free(buffer);
  }
  
  void process_ADD_msg(int sock, struct FORWARD_chain *chain,char *buffer)
  {
-     rule aux;
+	 //Creamos 2 reglasfw nuevas 1 para movernos(aux) y otra para insertar(newfw) y 1 regla rule que copiaremos del buffer
+     struct fw_rule *aux;
+	 struct fw_rule *newfw;
+	 rule new;
+	 //Copiamos lo que hay en el buffer a la nueva regla
+	 memcpy(&new,buffer+2,sizeof(rule));
+	 //Asignamos memoria dinamica a la nueva regla fw
+	 newfw = malloc(sizeof(struct fw_rule));
+	 //Inicializamos la nueva regla fw con los valores correspondientes
+	 newfw->next_rule = NULL;
+	 newfw->rule=new;
+	 
      if (chain->first_rule==NULL)
      {
-         memcpy(&aux,buffer+2,sizeof(rule));
-         chain->first_rule->rule = aux;
-         chain->first_rule->next_rule = NULL;
-         chain->num_rules++;
+         chain->first_rule = newfw;
      }
-     /*
      else{
-         aux.next_rule=chain->first_rule->next_rule;
-         while (aux.next_rule!=NULL)
+         aux=chain->first_rule;
+         while (aux->next_rule!=NULL)
          {
-             aux.next_rule=aux.next_rule;
+             aux = aux->next_rule;
          }
-         //aux.rule=*((rule*)buffer+2);
-         memcpy(&aux.rule,buffer+2,sizeof(rule));
-         aux.next_rule=NULL;
-         chain->num_rules++;
+         aux->next_rule=newfw;
      }
-     */
+	 
+	 chain->num_rules++;
  }
  
  /** 
