@@ -215,8 +215,7 @@ rule introducir_regla(rule regla)
 
 void process_ADD_operation(int sock)
 {
-    //char *buffer = (char*) malloc(14*sizeof(char));
-	char buffer[MAX_BUFF_SIZE];
+    char buffer[MAX_BUFF_SIZE];
     memset(buffer,'\0',MAX_BUFF_SIZE);
     unsigned short code = 5;
     stshort(code,buffer);
@@ -232,6 +231,54 @@ void process_ADD_operation(int sock)
     
 }
 
+void process_DELETE_operation(int sock)
+{
+    char buffer[MAX_BUFF_SIZE];
+    memset(buffer,'\0',MAX_BUFF_SIZE);
+    unsigned short code = 7;
+    unsigned short idregla;
+    printf("Introduzca el id de la regla que desea borrar\n");
+    scanf("%hu",&idregla);
+    stshort(code,buffer);
+    stshort(idregla,buffer+2);
+    send(sock,buffer,4,0);
+    recv(sock,buffer,MAX_BUFF_SIZE,0);
+    code=ldshort(buffer);
+    if ( code == 11)
+    {
+        unsigned short errorcode=ldshort(buffer+2);
+        printf("Codigo de error %hu, %s",errorcode,ERR_MSG_RULE);
+    }
+    else{
+        printf("%s",OK_MSG);
+    }
+}
+
+void process_CHANGE_operation(int sock)
+{
+    char buffer[MAX_BUFF_SIZE];
+    memset(buffer,'\0',MAX_BUFF_SIZE);
+    unsigned short code = 6;
+    stshort(code,buffer);
+    rule mod_regla;
+    mod_regla=introducir_regla(mod_regla);
+    printf("Ponga el identificado de la regla a cambiar");
+    unsigned short indice;
+    scanf("%hu",&indice);
+    stshort(indice,buffer+2);
+    memcpy(buffer+4,&mod_regla,sizeof(mod_regla));
+    send(sock,buffer,MAX_BUFF_SIZE,0);
+    recv(sock,buffer,MAX_BUFF_SIZE,0);
+    if ( code == 11)
+     {
+        unsigned short errorcode=ldshort(buffer+2);
+        printf("Codigo de error %hu, %s",errorcode,ERR_MSG_RULE);
+      }
+    else{
+        printf("%s",OK_MSG);
+    }
+
+}
 
 
 /*
@@ -270,8 +317,10 @@ void process_menu_option(int s, int option)
 		process_ADD_operation(s);
       break;   
     case MENU_OP_CHANGE_RULE:
+                process_CHANGE_operation(s);
       break;   
-    case MENU_OP_DEL_RULE:    	
+    case MENU_OP_DEL_RULE:
+        process_DELETE_operation(s);
       break;
     case MENU_OP_FLUSH:
       break;       

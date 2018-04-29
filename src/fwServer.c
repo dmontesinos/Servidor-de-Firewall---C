@@ -57,7 +57,8 @@ void process_HELLO_msg(int sock)
   stshort(code,buffer);
   //Escribimos Hello World a partir del 2 byte (opcode)
   char message[11] = "Hello World";
-  for (int i = 2; i< 13; i++)
+  int i;
+  for (i = 2; i< 13; i++)
   {
 	  *(buffer+i)=message[i-2];
   }
@@ -101,7 +102,7 @@ void process_HELLO_msg(int sock)
  void process_ADD_msg(int sock, struct FORWARD_chain *chain,char *buffer)
  {
 	 //Creamos 2 reglasfw nuevas 1 para movernos(aux) y otra para insertar(newfw) y 1 regla rule que copiaremos del buffer
-     struct fw_rule *aux;
+         struct fw_rule *aux;
 	 struct fw_rule *newfw;
 	 rule new;
 	 //Copiamos lo que hay en el buffer a la nueva regla
@@ -126,6 +127,96 @@ void process_HELLO_msg(int sock)
      }
 	 
 	 chain->num_rules++;
+ }
+ 
+ void process_DELETE_msg(int sock, struct FORWARD_chain *chain, char *buffer)
+ {
+     char mensaje[MAX_BUFF_SIZE];
+     memset(mensaje,'\0',MAX_BUFF_SIZE);
+     unsigned short indice = ldshort(buffer+2);
+     struct fw_rule *aux = chain->first_rule;
+     struct fw_rule *anterior;
+     if (indice > chain->num_rules)
+     {
+         unsigned short code = 11;
+         stshort(code,mensaje);
+         unsigned short error=ERR_RULE;
+         stshort(error,mensaje+2);
+         send(sock,mensaje,4,0);
+     }
+     else{
+         if (indice == 1)
+         {
+             if (chain->num_rules == 1)
+             {
+                 chain->first_rule = NULL;
+                 free(aux);
+                 chain->num_rules--;
+             }
+             else{
+                 chain->first_rule=aux->next_rule;
+                 free(aux);
+                 chain->num_rules--;
+             }
+         }
+         else
+         {
+              if (indice==chain->num_rules)
+              {
+                  int i = 1;
+                  for ( i = 1;i < chain->num_rules;i++)
+                  {
+                      anterior=aux;
+                      aux=aux->next_rule;
+                  }
+                  chain->num_rules--;
+                  free(aux);
+                  
+              }
+              else{
+                  int i = 1;
+                  for ( i = 1; i< indice;i++)
+                  {
+                      anterior=aux;
+                      aux=aux->next_rule;
+                  }
+                  anterior->next_rule=aux->next_rule;
+                  free(aux);
+                  chain->num_rules--;
+              }
+         }
+         unsigned short code = 10;   
+         stshort(code,mensaje);
+         send(sock,mensaje,2,0);
+     }
+ }
+ 
+ void process_CHANGE_msg(int sock, struct FORWARD_chain *chain, char *buffer)
+ {
+         char mensaje[MAX_BUFF_SIZE];
+         struct fw_rule *aux = chain->first_rule;
+	 rule modificada;
+	 memcpy(&modificada,buffer+4,sizeof(rule));
+         unsigned short indice = ldshort(buffer+2);
+         if (indice > chain->num_rules)
+         {
+            unsigned short code = 11;
+            stshort(code,mensaje);
+            unsigned short error=ERR_RULE;
+            stshort(error,mensaje+2);
+            send(sock,mensaje,4,0); 
+         }
+         else{
+             int i =1;
+            for (i = 1; i < indice; i++)
+             {
+		aux = aux->next_rule;
+              }
+            aux->rule=modificada;
+            unsigned short code = 10;   
+            stshort(code,mensaje);
+            send(sock,mensaje,2,0); 
+         }     
  }
  
  /** 
@@ -155,9 +246,11 @@ int process_msg(int sock, struct FORWARD_chain *chain)
     case MSG_ADD:
 	process_ADD_msg(sock,chain,&buffer);
       break;                              
-    case MSG_CHANGE:      
+    case MSG_CHANGE:   
+        process_CHANGE_msg(sock,chain,&buffer);
       break;                              
     case MSG_DELETE:
+        process_DELETE_msg(sock,chain,&buffer);
       break;                              
     case MSG_FLUSH:
       break;                                                                                     
@@ -207,15 +300,19 @@ int process_msg(int sock, struct FORWARD_chain *chain)
   listen(server_socket,MAX_QUEUED_CON);
 
   while(1) {
-    int s2 = accept(server_socket, (struct sockaddr*)&client_address,&client_address_len);
-    do {
+	  int s2 = accept(server_socket, (struct sockaddr*)&client_address,&client_address_len);
+	  int pid ;
+	  pid = fork();
+	  if (pid == 0)
+	  {
+		do {
       
-	  finish=process_msg(s2,&chain);
+			finish=process_msg(s2,&chain);
 	 
-      //TODO: finish = process_msg(....., &chain);
+			//TODO: finish = process_msg(....., &chain);
 
-    }while(!finish);
-    
+			}while(!finish);
+	  }
     //TODO
   }  
   
