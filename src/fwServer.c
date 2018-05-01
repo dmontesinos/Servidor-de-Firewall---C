@@ -280,7 +280,7 @@ int process_msg(int sock, struct FORWARD_chain *chain)
 
   struct sockaddr_in server_address;
   server_address.sin_family = AF_INET;
-  server_address.sin_port = htons(9411);
+  server_address.sin_port = htons(port);
   server_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
   //Creacion del server sockett

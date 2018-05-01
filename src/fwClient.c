@@ -161,13 +161,30 @@ void process_LIST_operation(int sock)
   recv(sock,buffer,MAX_BUFF_SIZE,0);
   //Printamos la respuesta del server a partir del 2 byte (opCode)
   unsigned short contador =ldshort(buffer+2);
+  char srcdst[3];
+  char sportdport[4];
   printf("En el servidor hay %u reglas\n",contador);
+  printf("indice\t src/dst\t mascara\t sport/dport\t puerto\t\t ip\n");
   int offset=4;
   int indice = 1;
   while (contador > 0)
   {
 	 memcpy(&aux,buffer+offset,sizeof(rule));
-	 printf("%d %s %hu %hu %hu %hu\n",indice,inet_ntoa(aux.addr),ntohs(aux.src_dst_addr),ntohs(aux.mask),ntohs(aux.src_dst_port),ntohs(aux.port));
+	 if (aux.src_dst_addr == 0 )
+	 {
+		strcpy(srcdst,SRC_STR);
+	 }
+	 else{
+		strcpy(srcdst,DST_STR);
+	 }
+	 if (aux.src_dst_port == 0 )	
+	 {
+		strcpy(sportdport,SRC_PORT_STR);
+	 }
+	 else{
+		 strcpy(sportdport,DST_PORT_STR);
+			}
+	 printf("%d\t %s\t\t %hu\t\t %s\t\t %hu\t\t %s\n",indice,srcdst,ntohs(aux.mask),sportdport,ntohs(aux.port),inet_ntoa(aux.addr));
 	 contador--;
 	 offset=offset + sizeof(rule);
 	 indice++;
@@ -178,35 +195,61 @@ void process_LIST_operation(int sock)
 
 rule introducir_regla(rule regla)
 {
-	char ip[MAX_BUFF_SIZE];
-	memset(ip,'\0',MAX_BUFF_SIZE);
-    int ip1;
-	int ip2;
-	int ip3;
-	int ip4;
-    
-	printf("Src/dst addr");
-	scanf("%hu",&regla.src_dst_addr);
-    printf("IP1: ");
-    scanf("%d",&ip1);
-	printf("IP2: ");
-    scanf("%d",&ip2);
-	printf("IP3: ");
-    scanf("%d",&ip3);
-	printf("IP4: ");
-    scanf("%d",&ip4);
-    printf("Mascara: ");
-    scanf("%hu",&regla.mask);
-    printf("Puerto: ");
-    scanf("%hu",&regla.port);
-    printf("Dport/sport");
-    scanf("%hu",&regla.src_dst_port);
+	char ip[32];
+    int ip1,ip2,ip3,ip4;
+	char srcdst[3];
+	unsigned short mask;
+	char sportdport[4];
+	unsigned short port;
 	
-    
-	regla.src_dst_addr = htons(regla.src_dst_addr);
-	regla.mask = htons(regla.mask);
-	regla.src_dst_port = htons(regla.src_dst_port);
-	regla.port = htons(regla.port);
+        bool menu = TRUE;
+
+        while(menu){
+            printf("Introducción de una nueva regla\n");
+ 
+            printf("---------------------------\n");
+			printf("Utiliza el formato: src/dst ip/netmask dport/sport port \n");
+			scanf("%s %d.%d.%d.%d/%hu %s %hu",&srcdst,&ip1,&ip2,&ip3,&ip4,&mask,&sportdport,&port);
+			
+		
+			if ((strcmp(srcdst,DST_STR) == 0) || ( strcmp(srcdst,SRC_STR) == 0))
+			{
+				if ((ip1&&ip2&&ip3&&ip4 >= 0) && (ip1&&ip2&&ip3&&ip4 <= 255))
+				{
+					if((mask <= 32 ) && (mask >=0))
+					{
+						if ((strcmp(sportdport,SRC_PORT_STR)==0) || (strcmp(sportdport,DST_PORT_STR)==0) )
+						{
+							if (( port >= 0 ) && (port <= 65535))
+							{
+								menu=FALSE;
+							}								
+						}
+					}
+					
+				}
+			}
+		
+        }
+	
+	
+	if (strcmp(srcdst,DST_STR) == 0)
+	{
+		regla.src_dst_addr = htons(0);
+	}
+	else
+	{
+		regla.src_dst_addr = htons(1);
+	}
+	if (strcmp(sportdport,SRC_PORT_STR) == 0)
+	{
+		regla.src_dst_port = htons(0);
+	}
+	else{
+		regla.src_dst_port = htons(1);
+	}
+	regla.mask=htons(mask);
+	regla.port=htons(port);
 	sprintf(ip, "%d.%d.%d.%d",ip1,ip2,ip3,ip4);
     inet_aton(ip,&regla.addr);
 	
@@ -220,11 +263,11 @@ void process_ADD_operation(int sock)
     unsigned short code = 5;
     stshort(code,buffer);
     rule nueva_regla;
-    printf("He creado una nueva regla con exito \n");
+    //printf("He creado una nueva regla con exito \n");
     nueva_regla=introducir_regla(nueva_regla);
-    printf("He introducido la regla con exito \n");
+    //printf("He introducido la regla con exito \n");
     memcpy(buffer+2,&nueva_regla,sizeof(nueva_regla)); //memcpy-> para copiar buffers/reglas
-    printf("He asignado bien la memoria \n");
+    //printf("He asignado bien la memoria \n");
     send(sock,buffer,MAX_BUFF_SIZE,0);
     
     
