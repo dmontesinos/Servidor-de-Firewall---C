@@ -233,7 +233,7 @@ rule introducir_regla(rule regla)
         }
 	
 	
-	if (strcmp(srcdst,DST_STR) == 0)
+	if (strcmp(srcdst,SRC_STR) == 0)
 	{
 		regla.src_dst_addr = htons(0);
 	}
@@ -302,16 +302,18 @@ void process_CHANGE_operation(int sock)
     char buffer[MAX_BUFF_SIZE];
     memset(buffer,'\0',MAX_BUFF_SIZE);
     unsigned short code = 6;
+	unsigned short indice;
     stshort(code,buffer);
+	printf("Ponga el identificado de la regla a cambiar\n");
+    scanf("%hu",&indice);
     rule mod_regla;
     mod_regla=introducir_regla(mod_regla);
-    printf("Ponga el identificado de la regla a cambiar");
-    unsigned short indice;
-    scanf("%hu",&indice);
     stshort(indice,buffer+2);
     memcpy(buffer+4,&mod_regla,sizeof(mod_regla));
     send(sock,buffer,MAX_BUFF_SIZE,0);
+	memset(buffer,'\0',MAX_BUFF_SIZE);
     recv(sock,buffer,MAX_BUFF_SIZE,0);
+	code = ldshort(buffer);
     if ( code == 11)
      {
         unsigned short errorcode=ldshort(buffer+2);

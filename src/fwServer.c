@@ -193,30 +193,32 @@ void process_HELLO_msg(int sock)
  
  void process_CHANGE_msg(int sock, struct FORWARD_chain *chain, char *buffer)
  {
-         char mensaje[MAX_BUFF_SIZE];
-         struct fw_rule *aux = chain->first_rule;
-	 rule modificada;
-	 memcpy(&modificada,buffer+4,sizeof(rule));
-         unsigned short indice = ldshort(buffer+2);
-         if (indice > chain->num_rules)
-         {
-            unsigned short code = 11;
-            stshort(code,mensaje);
-            unsigned short error=ERR_RULE;
-            stshort(error,mensaje+2);
-            send(sock,mensaje,4,0); 
-         }
-         else{
-             int i =1;
-            for (i = 1; i < indice; i++)
-             {
-		aux = aux->next_rule;
-              }
-            aux->rule=modificada;
-            unsigned short code = 10;   
-            stshort(code,mensaje);
-            send(sock,mensaje,2,0); 
-         }     
+	char mensaje[MAX_BUFF_SIZE];
+    memset(mensaje,'\0',MAX_BUFF_SIZE);
+    unsigned short indice = ldshort(buffer+2);
+	struct fw_rule *aux = chain->first_rule;
+	rule modificada;
+	memcpy(&modificada,buffer+4,sizeof(rule));
+    if ( indice > chain->num_rules )
+    {
+        unsigned short code = 11;
+        stshort(code,mensaje);
+        unsigned short error=ERR_RULE;
+        stshort(error,mensaje+2);
+        send(sock,mensaje,4,0);
+    }
+    else
+	{
+        int i =1;
+		for (i = 1; i < indice; i++)
+        {
+			aux = aux->next_rule;
+        }
+		aux->rule=modificada;
+        unsigned short code = 10;   
+        stshort(code,mensaje);
+        send(sock,mensaje,2,0); 
+    }     
  }
  
  /** 
