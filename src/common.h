@@ -35,6 +35,8 @@
 #define MSG_ERR 11
 
 #define ERR_RULE 1
+#define ERR_SERVER_EMPTY 2
+#define ERR_RULE_ALREADY_EXIST 3
 
 #define SRC 0
 #define DST 1

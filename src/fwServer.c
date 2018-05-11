@@ -105,32 +105,95 @@ void process_LIST_msg(int sock, struct FORWARD_chain *chain)
 void process_ADD_msg(int sock, struct FORWARD_chain *chain,char *buffer)
 {
     //Creamos 2 reglasfw nuevas 1 para movernos(aux) y otra para insertar(newfw) y 1 regla rule que copiaremos del buffer
+    char mensaje[MAX_BUFF_SIZE];
     struct fw_rule *aux;
     struct fw_rule *newfw;
     rule new;
     //Copiamos lo que hay en el buffer a la nueva regla
     memcpy(&new,buffer+2,sizeof(rule));
-    //Asignamos memoria dinamica a la nueva regla fw
-    newfw = malloc(sizeof(struct fw_rule));
-    //Inicializamos la nueva regla fw con los valores correspondientes
-    newfw->next_rule = NULL;
-    newfw->rule=new;
-
-    if (chain->first_rule==NULL)
+    if (compruebaIguales(chain,new) > 0 )
     {
-        chain->first_rule = newfw;
+        unsigned short code = 11;
+        stshort(code,mensaje);
+        unsigned short error=ERR_RULE_ALREADY_EXIST;
+        stshort(error,mensaje+2);
+        send(sock,mensaje,4,0);
     }
     else
     {
-        aux=chain->first_rule;
-        while (aux->next_rule!=NULL)
+        //Asignamos memoria dinamica a la nueva regla fw
+        newfw = malloc(sizeof(struct fw_rule));
+        //Inicializamos la nueva regla fw con los valores correspondientes
+        newfw->next_rule = NULL;
+        newfw->rule=new;
+
+        if (chain->first_rule==NULL)
         {
-            aux = aux->next_rule;
+            chain->first_rule = newfw;
         }
-        aux->next_rule=newfw;
+        else
+        {
+            aux=chain->first_rule;
+            while (aux->next_rule!=NULL)
+            {
+                aux = aux->next_rule;
+            }
+            aux->next_rule=newfw;
+        }
+
+        chain->num_rules++;
+        unsigned short code = 10;   
+        stshort(code,mensaje);
+        send(sock,mensaje,2,0);
     }
 
-    chain->num_rules++;
+}
+
+void borrar_regla(unsigned short indice, struct FORWARD_chain *chain)
+{
+    struct fw_rule *aux = chain->first_rule;
+    struct fw_rule *anterior;
+    if (indice == 1)
+    {
+        if (chain->num_rules == 1)
+        {
+           chain->first_rule = NULL;
+           free(aux);
+           chain->num_rules--;
+        }
+        else{
+           chain->first_rule=aux->next_rule;
+           free(aux);
+           chain->num_rules--;
+        }
+    }
+    else
+    {
+        if (indice==chain->num_rules)
+        {
+            int i = 1;
+            for ( i = 1;i < chain->num_rules;i++)
+            {
+                anterior=aux;
+                aux=aux->next_rule;
+            }
+           chain->num_rules--;
+           free(aux);              
+        }
+        else
+        {
+            int i = 1;
+            for ( i = 1; i< indice;i++)
+            {
+                anterior=aux;
+                aux=aux->next_rule;
+            }
+            anterior->next_rule=aux->next_rule;
+            free(aux);
+            chain->num_rules--;
+        }
+    }   
+
 }
  
 void process_DELETE_msg(int sock, struct FORWARD_chain *chain, char *buffer)
@@ -138,8 +201,6 @@ void process_DELETE_msg(int sock, struct FORWARD_chain *chain, char *buffer)
     char mensaje[MAX_BUFF_SIZE];
     memset(mensaje,'\0',MAX_BUFF_SIZE);
     unsigned short indice = ldshort(buffer+2);
-    struct fw_rule *aux = chain->first_rule;
-    struct fw_rule *anterior;
     if (indice > chain->num_rules)
     {
         unsigned short code = 11;
@@ -148,47 +209,9 @@ void process_DELETE_msg(int sock, struct FORWARD_chain *chain, char *buffer)
         stshort(error,mensaje+2);
         send(sock,mensaje,4,0);
     }
-    else{
-        if (indice == 1)
-        {
-            if (chain->num_rules == 1)
-            {
-               chain->first_rule = NULL;
-               free(aux);
-               chain->num_rules--;
-            }
-            else{
-               chain->first_rule=aux->next_rule;
-               free(aux);
-               chain->num_rules--;
-            }
-        }
-        else
-        {
-            if (indice==chain->num_rules)
-            {
-                int i = 1;
-                for ( i = 1;i < chain->num_rules;i++)
-                {
-                    anterior=aux;
-                    aux=aux->next_rule;
-                }
-               chain->num_rules--;
-               free(aux);              
-            }
-            else
-            {
-                int i = 1;
-                for ( i = 1; i< indice;i++)
-                {
-                    anterior=aux;
-                    aux=aux->next_rule;
-                }
-                anterior->next_rule=aux->next_rule;
-                free(aux);
-                chain->num_rules--;
-            }
-        }
+    else
+    {
+        borrar_regla(indice,chain);
         unsigned short code = 10;   
         stshort(code,mensaje);
         send(sock,mensaje,2,0);
@@ -213,16 +236,73 @@ void process_CHANGE_msg(int sock, struct FORWARD_chain *chain, char *buffer)
     }
     else
     {
-        int i =1;
-        for (i = 1; i < indice; i++)
+        if (compruebaIguales(chain,modificada) > 0 )
         {
-            aux = aux->next_rule;
+            unsigned short code = 11;
+            stshort(code,mensaje);
+            unsigned short error=ERR_RULE_ALREADY_EXIST;
+            stshort(error,mensaje+2);
+            send(sock,mensaje,4,0);
         }
-        aux->rule=modificada;
+        else
+        {
+            unsigned short i;
+            for (i = 1; i < indice; i++)
+            {
+                aux = aux->next_rule;
+            }
+            aux->rule=modificada;
+            unsigned short code = 10;   
+            stshort(code,mensaje);
+            send(sock,mensaje,2,0);     
+        }
+        int i =1;
+
+    }     
+}
+
+int compruebaIguales(struct FORWARD_chain *chain,rule nueva)
+{
+    int igual=0;
+    struct fw_rule *aux = chain->first_rule;
+    unsigned short i = 0;
+    for (i=0; i< chain->num_rules;i++)
+    {
+       if (memcmp(&aux->rule,&nueva,sizeof(rule)) == 0)
+       {
+        igual++;
+       }
+
+        aux = aux->next_rule;
+    }
+    return igual;
+}
+
+void process_FLUSH_msg(int sock, struct FORWARD_chain *chain, char*buffer)
+{
+    char mensaje[MAX_BUFF_SIZE];
+    memset(mensaje,'\0',MAX_BUFF_SIZE);
+    if (chain->num_rules == 0)
+    {
+        unsigned short code = 11;
+        stshort(code,mensaje);
+        unsigned short error=ERR_SERVER_EMPTY;
+        stshort(error,mensaje+2);
+        send(sock,mensaje,4,0);
+    }
+    else
+    {
+        unsigned short i =0;
+        unsigned short contador = chain->num_rules;
+        for ( i = 0; i < contador ;i++)
+        {
+            borrar_regla(1,chain);
+        }
         unsigned short code = 10;   
         stshort(code,mensaje);
-        send(sock,mensaje,2,0); 
-    }     
+        send(sock,mensaje,2,0);
+    }
+
 }
  
  /** 
@@ -260,6 +340,7 @@ int process_msg(int sock, struct FORWARD_chain *chain)
             process_DELETE_msg(sock,chain,&buffer);
             break;                              
         case MSG_FLUSH:
+            process_FLUSH_msg(sock,chain,buffer);
             break;                                                                                     
         case MSG_FINISH:
             //Cerramos el socket con el cliente y salimos del bucle interno en el main

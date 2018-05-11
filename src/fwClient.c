@@ -265,6 +265,18 @@ void process_ADD_operation(int sock)
     memcpy(buffer+2,&nueva_regla,sizeof(nueva_regla)); //memcpy-> para copiar buffers/reglas
     //printf("He asignado bien la memoria \n");
     send(sock,buffer,MAX_BUFF_SIZE,0);
+    memset(buffer,'\0',MAX_BUFF_SIZE);
+    recv(sock,buffer,MAX_BUFF_SIZE,0);
+    code=ldshort(buffer);
+    if ( code == 11)
+    {
+        unsigned short errorcode=ldshort(buffer+2);
+        printf("%s codigo de error %hu %s",NOK_MSG,errorcode,ERR_MSG_RULE_ALREADY_EXIST);
+    }
+    else
+    {
+        printf("%s",OK_MSG);
+    }
     
     
     
@@ -286,7 +298,7 @@ void process_DELETE_operation(int sock)
     if ( code == 11)
     {
         unsigned short errorcode=ldshort(buffer+2);
-        printf("Codigo de error %hu, %s",errorcode,ERR_MSG_RULE);
+        printf("%s codigo de error %hu %s",NOK_MSG,errorcode,ERR_MSG_RULE);
     }
     else
     {
@@ -314,7 +326,15 @@ void process_CHANGE_operation(int sock)
     if ( code == 11)
     {
         unsigned short errorcode=ldshort(buffer+2);
-        printf("Codigo de error %hu, %s",errorcode,ERR_MSG_RULE);
+        if (errorcode == 1)
+        {
+       		printf("%s codigo de error %hu %s",NOK_MSG,errorcode,ERR_MSG_RULE);  	
+        }
+        else
+        {
+        	printf("%s codigo de error %hu %s",NOK_MSG,errorcode,ERR_MSG_RULE_ALREADY_EXIST);
+        }
+
     }
     else
     {
@@ -326,30 +346,31 @@ void process_CHANGE_operation(int sock)
 void process_FLUSH_operation(int sock)
 {
 	char buffer[MAX_BUFF_SIZE];
-	char letra;
+	char letra[1];
 	memset(buffer,'\0',MAX_BUFF_SIZE);
 	unsigned short code = 8;
 	stshort(code,buffer);
-	printf("¿Realmente desea borrar todas las reglas?(s/n)");
-	scanf("%c",&letra);
-	if (letra = "s")
+	printf("¿Realmente desea borrar todas las reglas?(s/n)\n");
+	scanf("%s",&letra);
+	if (strcmp(letra,YES) == 0)
 	{
 		send(sock,buffer,2,0);
 		memset(buffer,'\0',MAX_BUFF_SIZE);
 		recv(sock,buffer,MAX_BUFF_SIZE,0);
 		code = ldshort(buffer);
-		if ( code == )
+		if ( code == 11)
 		{
-
+			unsigned short errorcode=ldshort(buffer+2);
+			printf("%s codigo de error %hu %s",NOK_MSG,errorcode,ERR_MSG_SERVER_EMPTY);
 		}
 		else
 		{
-
+			printf("%s",OK_MSG);
 		}	
 	}
 	else
 	{
-
+		printf("Anulando operacion");
 	}
 }
 
@@ -397,6 +418,7 @@ void process_menu_option(int s, int option)
 			process_DELETE_operation(s);
 			break;
 		case MENU_OP_FLUSH:
+			process_FLUSH_operation(s);
 			break;       
 		case MENU_OP_EXIT:
 			process_exit_operation(s);

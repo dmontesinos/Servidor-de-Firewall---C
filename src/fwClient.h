@@ -17,6 +17,7 @@
 
 #define OK_MSG "Operació finalitzada amb èxit"
 #define NOK_MSG "L'operació no s'ha pogut dur a terme degut a: "
+#define YES "s"
 
 #define MAX_ERR_MSG_SIZE 100
 #define MAX_ADDR_SIZE 16 //maximum size of an ip addr in decimal dotted quad format + \0
@@ -26,8 +27,12 @@
 
 #define ERR_MSG_RULE "La regla no existeix."
 #define ERR_MSG_DEFAULT "Hi ha hagut algun problema."
+#define ERR_MSG_SERVER_EMPTY "El servidor esta vacio"
+#define ERR_MSG_RULE_ALREADY_EXIST "La regla que has intentado introducir ya estaba en el servidor"
 
 #define ERR_RULE 1
+#define ERR_SERVER_EMPTY 2
+#define ERR_RULE_ALREADY_EXIST 3
 
 #define IP_STR "IP"
 #define NETID_STR "netID"
