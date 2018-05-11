@@ -15,7 +15,7 @@
  */
 int setaddrbyname(struct sockaddr_in *addr, char *host)
 {
-  struct addrinfo hints, *res;
+	struct addrinfo hints, *res;
 	int status;
 
   memset(&hints, 0, sizeof(struct addrinfo));
@@ -126,70 +126,71 @@ void print_menu()
  */
 void process_hello_operation(int sock)
 {
-  //Creamos un buffer de 2 bytes para enviar el opCode de la peticion hello
-  //char *buffer = (char*) malloc(2*sizeof(char));
-  char buffer[MAX_BUFF_SIZE];
-  //struct hello_rp hello_rp;
-  unsigned short code=1;
-  memset(buffer,'\0',MAX_BUFF_SIZE);
-  stshort(code,buffer);
-  //Enviamos la peticion al server
-  send(sock,buffer,(2*sizeof(char)),0);
-  //Server nos responde 
-  recv(sock,buffer,(14*sizeof(char)),0);
-  //Printamos la respuesta del server a partir del 2 byte (opCode)
-  char c='A';
-  int i = 2;
-  while (c!='\0')
-  {
-	  c = *(buffer+i);
-	  i++;
-	  printf("%c",c);
-  }
+  	//Creamos un buffer de 2 bytes para enviar el opCode de la peticion hello
+  	//char *buffer = (char*) malloc(2*sizeof(char));
+  	char buffer[MAX_BUFF_SIZE];
+  	//struct hello_rp hello_rp;
+  	unsigned short code=1;
+  	memset(buffer,'\0',MAX_BUFF_SIZE);
+  	stshort(code,buffer);
+  	//Enviamos la peticion al server
+  	send(sock,buffer,(2*sizeof(char)),0);
+  	//Server nos responde 
+  	recv(sock,buffer,(14*sizeof(char)),0);
+  	//Printamos la respuesta del server a partir del 2 byte (opCode)
+  	char c='A';
+  	int i = 2;
+  	while (c!='\0')
+  	{
+		c = *(buffer+i);
+		i++;
+		printf("%c",c);
+  	}
 }
 
 void process_LIST_operation(int sock)
 {
-  rule aux;
-  char buffer[MAX_BUFF_SIZE];
-  unsigned short code=3;
-  memset(buffer,'\0',MAX_BUFF_SIZE);
-  stshort(code,buffer);
-  //Enviamos la peticion al server
-  send(sock,buffer,(2*sizeof(char)),0);
-  //Server nos responde 
-  recv(sock,buffer,MAX_BUFF_SIZE,0);
-  //Printamos la respuesta del server a partir del 2 byte (opCode)
-  unsigned short contador =ldshort(buffer+2);
-  char srcdst[3];
-  char sportdport[4];
-  printf("En el servidor hay %u reglas\n",contador);
-  printf("indice\t src/dst\t mascara\t sport/dport\t puerto\t\t ip\n");
-  int offset=4;
-  int indice = 1;
-  while (contador > 0)
-  {
-	 memcpy(&aux,buffer+offset,sizeof(rule));
-	 if (aux.src_dst_addr == 0 )
-	 {
-		strcpy(srcdst,SRC_STR);
-	 }
-	 else{
-		strcpy(srcdst,DST_STR);
-	 }
-	 if (aux.src_dst_port == 0 )	
-	 {
-		strcpy(sportdport,SRC_PORT_STR);
-	 }
-	 else{
-		 strcpy(sportdport,DST_PORT_STR);
-			}
-	 printf("%d\t %s\t\t %hu\t\t %s\t\t %hu\t\t %s\n",indice,srcdst,ntohs(aux.mask),sportdport,ntohs(aux.port),inet_ntoa(aux.addr));
-	 contador--;
-	 offset=offset + sizeof(rule);
-	 indice++;
-	 
-  }
+  	rule aux;
+  	char buffer[MAX_BUFF_SIZE];
+  	unsigned short code=3;
+  	memset(buffer,'\0',MAX_BUFF_SIZE);
+  	stshort(code,buffer);
+  	//Enviamos la peticion al server
+  	send(sock,buffer,(2*sizeof(char)),0);
+  	//Server nos responde 
+  	recv(sock,buffer,MAX_BUFF_SIZE,0);
+  	//Printamos la respuesta del server a partir del 2 byte (opCode)
+  	unsigned short contador =ldshort(buffer+2);
+  	char srcdst[3];
+  	char sportdport[4];
+  	printf("En el servidor hay %u reglas\n",contador);
+  	printf("indice\t src/dst\t mascara\t sport/dport\t puerto\t\t ip\n");
+  	int offset=4;
+  	int indice = 1;
+  	while (contador > 0)
+  	{
+		memcpy(&aux,buffer+offset,sizeof(rule));
+		if (aux.src_dst_addr == 0 )
+		{
+			strcpy(srcdst,SRC_STR);
+	 	}
+	 	else
+	 	{
+			strcpy(srcdst,DST_STR);
+	 	}
+		if (aux.src_dst_port == 0 )	
+	 	{
+			strcpy(sportdport,SRC_PORT_STR);
+	 	}
+	 	else
+	 	{
+			strcpy(sportdport,DST_PORT_STR);
+		}
+		printf("%d\t %s\t\t %hu\t\t %s\t\t %hu\t\t %s\n",indice,srcdst,ntohs(aux.mask),sportdport,ntohs(aux.port),inet_ntoa(aux.addr));
+		contador--;
+		offset=offset + sizeof(rule);
+		indice++;
+  	}
 
 }
 
@@ -201,38 +202,32 @@ rule introducir_regla(rule regla)
 	unsigned short mask;
 	char sportdport[4];
 	unsigned short port;
-	
-        bool menu = TRUE;
-
-        while(menu){
-            printf("Introducción de una nueva regla\n");
- 
-            printf("---------------------------\n");
-			printf("Utiliza el formato: src/dst ip/netmask dport/sport port \n");
-			scanf("%s %d.%d.%d.%d/%hu %s %hu",&srcdst,&ip1,&ip2,&ip3,&ip4,&mask,&sportdport,&port);
-			
-		
-			if ((strcmp(srcdst,DST_STR) == 0) || ( strcmp(srcdst,SRC_STR) == 0))
+	bool menu = TRUE;
+	while(menu)
+	{
+        printf("Introducción de una nueva regla\n");
+        printf("---------------------------\n");
+		printf("Utiliza el formato: src/dst ip/netmask dport/sport port \n");
+		scanf("%s %d.%d.%d.%d/%hu %s %hu",&srcdst,&ip1,&ip2,&ip3,&ip4,&mask,&sportdport,&port);
+		if ((strcmp(srcdst,DST_STR) == 0) || ( strcmp(srcdst,SRC_STR) == 0))
+		{
+			if ((ip1&&ip2&&ip3&&ip4 >= 0) && (ip1&&ip2&&ip3&&ip4 <= 255))
 			{
-				if ((ip1&&ip2&&ip3&&ip4 >= 0) && (ip1&&ip2&&ip3&&ip4 <= 255))
+				if((mask <= 32 ) && (mask >=0))
 				{
-					if((mask <= 32 ) && (mask >=0))
+					if ((strcmp(sportdport,SRC_PORT_STR)==0) || (strcmp(sportdport,DST_PORT_STR)==0) )
 					{
-						if ((strcmp(sportdport,SRC_PORT_STR)==0) || (strcmp(sportdport,DST_PORT_STR)==0) )
+						if (( port >= 0 ) && (port <= 65535))
 						{
-							if (( port >= 0 ) && (port <= 65535))
-							{
-								menu=FALSE;
-							}								
-						}
+							menu=FALSE;
+						}								
 					}
-					
 				}
+				
 			}
-		
-        }
+		}
 	
-	
+    }
 	if (strcmp(srcdst,SRC_STR) == 0)
 	{
 		regla.src_dst_addr = htons(0);
@@ -245,7 +240,8 @@ rule introducir_regla(rule regla)
 	{
 		regla.src_dst_port = htons(0);
 	}
-	else{
+	else
+	{
 		regla.src_dst_port = htons(1);
 	}
 	regla.mask=htons(mask);
@@ -279,7 +275,7 @@ void process_DELETE_operation(int sock)
     char buffer[MAX_BUFF_SIZE];
     memset(buffer,'\0',MAX_BUFF_SIZE);
     unsigned short code = 7;
-    unsigned short idregla;
+   	unsigned short idregla;
     printf("Introduzca el id de la regla que desea borrar\n");
     scanf("%hu",&idregla);
     stshort(code,buffer);
@@ -292,7 +288,8 @@ void process_DELETE_operation(int sock)
         unsigned short errorcode=ldshort(buffer+2);
         printf("Codigo de error %hu, %s",errorcode,ERR_MSG_RULE);
     }
-    else{
+    else
+    {
         printf("%s",OK_MSG);
     }
 }
@@ -315,15 +312,47 @@ void process_CHANGE_operation(int sock)
     recv(sock,buffer,MAX_BUFF_SIZE,0);
 	code = ldshort(buffer);
     if ( code == 11)
-     {
+    {
         unsigned short errorcode=ldshort(buffer+2);
         printf("Codigo de error %hu, %s",errorcode,ERR_MSG_RULE);
-      }
-    else{
-        printf("%s",OK_MSG);
+    }
+    else
+    {
+       	printf("%s",OK_MSG);
     }
 
 }
+
+void process_FLUSH_operation(int sock)
+{
+	char buffer[MAX_BUFF_SIZE];
+	char letra;
+	memset(buffer,'\0',MAX_BUFF_SIZE);
+	unsigned short code = 8;
+	stshort(code,buffer);
+	printf("¿Realmente desea borrar todas las reglas?(s/n)");
+	scanf("%c",&letra);
+	if (letra = "s")
+	{
+		send(sock,buffer,2,0);
+		memset(buffer,'\0',MAX_BUFF_SIZE);
+		recv(sock,buffer,MAX_BUFF_SIZE,0);
+		code = ldshort(buffer);
+		if ( code == )
+		{
+
+		}
+		else
+		{
+
+		}	
+	}
+	else
+	{
+
+	}
+}
+
 
 
 /*
@@ -332,15 +361,15 @@ void process_CHANGE_operation(int sock)
  */
 void process_exit_operation(int sock)
 {
-  //Creamos un buffer de 2 bytes para enviar el opCode de la peticion exit
-  //char *buffer = (char*) malloc(2*sizeof(char));
-  char buffer[MAX_BUFF_SIZE];
-  unsigned short code=9;
-  memset(buffer,'\0',MAX_BUFF_SIZE);
-  stshort(code,buffer);
-  //Enviamos la peticion al server y cerramos el cliente
-  send(sock,buffer,(2*sizeof(char)),0);
-  exit(0);     
+  	//Creamos un buffer de 2 bytes para enviar el opCode de la peticion exit
+  	//char *buffer = (char*) malloc(2*sizeof(char));
+  	char buffer[MAX_BUFF_SIZE];
+  	unsigned short code=9;
+  	memset(buffer,'\0',MAX_BUFF_SIZE);
+  	stshort(code,buffer);
+  	//Enviamos la peticion al server y cerramos el cliente
+  	send(sock,buffer,(2*sizeof(char)),0);
+  	exit(0);     
 }
 
 /** 
@@ -351,29 +380,29 @@ void process_exit_operation(int sock)
  */
 void process_menu_option(int s, int option)
 {		  
-  switch(option){
-    case MENU_OP_HELLO:
-      process_hello_operation(s);
-      break;
-    case MENU_OP_LIST_RULES: 
-		process_LIST_operation(s);
-      break;  
-    case MENU_OP_ADD_RULE:  
-		process_ADD_operation(s);
-      break;   
-    case MENU_OP_CHANGE_RULE:
-                process_CHANGE_operation(s);
-      break;   
-    case MENU_OP_DEL_RULE:
-        process_DELETE_operation(s);
-      break;
-    case MENU_OP_FLUSH:
-      break;       
-    case MENU_OP_EXIT:
-		process_exit_operation(s);
-    default:
-      printf("Invalid menu option\n");          
-  }
+	switch(option){
+		case MENU_OP_HELLO:
+			process_hello_operation(s);
+			break;
+		case MENU_OP_LIST_RULES: 
+			process_LIST_operation(s);
+			break;  
+		case MENU_OP_ADD_RULE:  
+			process_ADD_operation(s);
+			break;   
+		case MENU_OP_CHANGE_RULE:
+		    process_CHANGE_operation(s);
+			break;   
+		case MENU_OP_DEL_RULE:
+			process_DELETE_operation(s);
+			break;
+		case MENU_OP_FLUSH:
+			break;       
+		case MENU_OP_EXIT:
+			process_exit_operation(s);
+		default:
+			printf("Invalid menu option\n");          
+	}
 }
 
 
@@ -392,7 +421,7 @@ int main(int argc, char *argv[]){
  	server_address.sin_port = htons(port);
  	setaddrbyname(&server_address,hostName);
  
-  //Checking that the host name has been set.Otherwise the application is stopped. 
+ 	//Checking that the host name has been set.Otherwise the application is stopped. 
 	if(hostName == NULL){
 		perror("No s'ha especificat el nom del servidor\n\n");
 		return -1;
@@ -417,14 +446,15 @@ int main(int argc, char *argv[]){
 		printf("Conexion con el servidor establecida con exito\n");
 	}
   
-  	do{
-      print_menu();
-		  // getting the user input.
-		  scanf("%d",&menu_option);
-		  printf("\n\n"); 
-		  process_menu_option(client_socket,menu_option);
+  	do
+  	{
+      	print_menu();
+		// getting the user input.
+		scanf("%d",&menu_option);
+		printf("\n\n"); 
+		process_menu_option(client_socket,menu_option);
 
-	  }while(menu_option != MENU_OP_EXIT); //end while(opcio)
+	}while(menu_option != MENU_OP_EXIT); //end while(opcio)
  
-  return 0; 
+return 0; 
 }
