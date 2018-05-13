@@ -360,13 +360,13 @@ int main(int argc, char *argv[])
     struct FORWARD_chain chain;
     chain.first_rule=NULL;
     chain.num_rules = 0;
-
+    /*Abrimos el socket para que el cliente se pueda conectar*/
     socklen_t client_address_len;
     struct sockaddr_in client_address;
     client_address_len = sizeof(client_address);
 
     int server_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
-
+    /*Le especificamos una ip y un puerto al servidor*/
     struct sockaddr_in server_address;
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
